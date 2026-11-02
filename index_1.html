@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Free cornhole scoreboard for your phone. Tap to score board and hole bags, with cancellation scoring and an exact-21 bust rule.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cornhole">
+<meta name="theme-color" content="#1f6a47">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}body{margin:0}[hidden]{display:none!important}</style>
+<title>Cornhole Tap Score</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;800&family=Public+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: two team columns side by side, big tap targets, round controls pinned below */
+:root {
+  --bg: #eef2ec; --surface: #ffffff; --fg: #1b231e; --muted: #5a675f; --line: #d4dccf;
+  --accent: #1f6a47; --accent-fg: #ffffff; --chip: #e3ebe0;
+  --red: #b3262c; --blue: #1f4c9c; --team-fg: #ffffff;
+  --display: "Saira Condensed", "Arial Narrow", sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111613; --surface: #19201c; --fg: #e6ece7; --muted: #9aa69f; --line: #2b3530;
+  --accent: #5cbf8b; --accent-fg: #0d1410; --chip: #222b26; --red: #c9393f; --blue: #3a6cc4; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111613; --surface: #19201c; --fg: #e6ece7; --muted: #9aa69f; --line: #2b3530;
+  --accent: #5cbf8b; --accent-fg: #0d1410; --chip: #222b26; --red: #c9393f; --blue: #3a6cc4; color-scheme: dark }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); -webkit-user-select: none; user-select: none; }
+.app { min-height: 100%; box-sizing: border-box; max-width: 640px; margin: 0 auto; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px;
+  padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); padding-block: 12px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: 24px; margin: 0; text-transform: uppercase; letter-spacing: .03em; }
+.meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 0; }
+.team { background: var(--surface); border: 1px solid var(--line); border-top: 6px solid var(--c); border-radius: 12px; padding: 10px; display: grid; grid-template-rows: auto auto auto auto 1fr 1fr auto; gap: 8px; min-width: 0; }
+.proj { text-align: center; font-family: var(--display); font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; border-radius: 8px; background: var(--chip); padding: 2px 6px; }
+.proj.up { color: var(--accent); }
+.proj.bust { color: var(--red); }
+.proj.same { color: var(--muted); font-weight: 600; }
+.tap.miss { background: var(--chip); color: var(--muted); border: 1px dashed var(--line); min-height: 48px; }
+.tap.miss span { font-size: 18px; }
+.log { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 6px; }
+.log h2 { margin: 0; font: 800 15px var(--display); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.log ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.log li { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; font-size: 14px; border-bottom: 1px solid var(--line); padding-bottom: 4px; font-variant-numeric: tabular-nums; }
+.log li .n { color: var(--muted); }
+.log li .sc { font-family: var(--display); font-weight: 800; font-size: 16px; white-space: nowrap; }
+.team input { font: 600 18px var(--display); text-align: center; border: 0; border-bottom: 1px dashed var(--line); background: transparent; color: var(--fg); width: 100%; box-sizing: border-box; padding: 2px; -webkit-user-select: text; user-select: text; }
+.score { font-family: var(--display); font-weight: 800; font-size: clamp(64px, 20vw, 104px); line-height: .95; text-align: center; font-variant-numeric: tabular-nums; }
+.rnd { text-align: center; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.5em; }
+.rnd b { color: var(--fg); }
+.tap { border: 0; border-radius: 10px; background: var(--c); color: var(--team-fg); font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: .03em;
+  display: grid; place-content: center; gap: 0; min-height: 76px; cursor: pointer; touch-action: manipulation; transition: transform .06s; }
+.tap span { font-size: 30px; line-height: 1; }
+.tap small { font-size: 14px; font-weight: 600; opacity: .9; }
+.tap.hole { background: var(--surface); color: var(--c); border: 3px solid var(--c); }
+.tap:active { transform: scale(.97); }
+.tap:disabled { opacity: .35; cursor: default; transform: none; }
+.tap:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.bags { display: flex; justify-content: center; gap: 5px; }
+.bags i { width: 12px; height: 12px; border-radius: 3px; border: 2px solid var(--c); box-sizing: border-box; }
+.bags i.used { background: var(--c); }
+footer { display: grid; gap: 8px; }
+.verdict { text-align: center; font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; min-height: 1.3em; }
+.bar { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 8px; }
+button.ctl { font: 600 15px var(--body); border-radius: 10px; border: 1px solid var(--line); background: var(--chip); color: var(--fg); min-height: 52px; cursor: pointer; touch-action: manipulation; }
+button.ctl.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-size: 17px; font-weight: 700; }
+button.ctl:disabled { opacity: .4; cursor: default; }
+.rules { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 14px; }
+.rules label { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+.rules input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
+.rules select { font: 600 16px var(--body); background: var(--chip); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+.rules select:disabled { opacity: .45; }
+.bust { color: var(--red); }
+.win { background: var(--accent); color: var(--accent-fg); border-radius: 10px; padding: 10px; text-align: center; font-family: var(--display); font-weight: 800; font-size: 24px; text-transform: uppercase; }
+@media (prefers-reduced-motion: reduce) { .tap { transition: none; } }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header><h1>Cornhole</h1><span class="meta" id="meta">Round 1 · first to 21</span></header>
+  <div class="rules">
+    <label><input type="checkbox" id="exact"> Must hit exactly 21</label>
+    <label>Bust drops to <select id="bustTo" aria-label="Score after a bust"><option value="15">15</option><option value="13">13</option><option value="11">11</option><option value="prev">Score before round</option></select></label>
+  </div>
+  <div class="teams">
+    <section class="team" style="--c: var(--red)" aria-label="Team 1">
+      <input id="n0" aria-label="Team 1 name">
+      <div class="score" id="s0">0</div>
+      <div class="proj" id="p0"></div>
+      <div><div class="bags" id="b0"></div><div class="rnd" id="r0"></div></div>
+      <button class="tap" data-t="0" data-p="1"><span>+1</span><small>On board</small></button>
+      <button class="tap hole" data-t="0" data-p="3"><span>+3</span><small>In hole</small></button>
+      <button class="tap miss" data-t="0" data-p="0"><span>Miss</span><small>0 pts</small></button>
+    </section>
+    <section class="team" style="--c: var(--blue)" aria-label="Team 2">
+      <input id="n1" aria-label="Team 2 name">
+      <div class="score" id="s1">0</div>
+      <div class="proj" id="p1"></div>
+      <div><div class="bags" id="b1"></div><div class="rnd" id="r1"></div></div>
+      <button class="tap" data-t="1" data-p="1"><span>+1</span><small>On board</small></button>
+      <button class="tap hole" data-t="1" data-p="3"><span>+3</span><small>In hole</small></button>
+      <button class="tap miss" data-t="1" data-p="0"><span>Miss</span><small>0 pts</small></button>
+    </section>
+  </div>
+  <footer>
+    <div class="win" id="win" hidden></div>
+    <div class="verdict" id="verdict"></div>
+    <div class="bar">
+      <button class="ctl" id="undo">Undo</button>
+      <button class="ctl primary" id="end">End round</button>
+      <button class="ctl" id="reset">New game</button>
+    </div>
+  </footer>
+  <section class="log" aria-label="Score history"><h2>Score history</h2><ol id="log"></ol></section>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const fresh=()=>({names:['Red','Blue'],scores:[0,0],taps:[],history:[],exact:true,bustTo:'15'});
+let g=fresh();
+try{const s=JSON.parse(localStorage.getItem('cornholeTap'));if(s&&s.scores)g=Object.assign(fresh(),s);}catch(e){}
+const save=()=>{try{localStorage.setItem('cornholeTap',JSON.stringify(g));}catch(e){}};
+const tally=t=>{let board=0,hole=0,miss=0;g.taps.forEach(x=>{if(x.t===t){x.p===3?hole++:x.p===1?board++:miss++;}});return {board,hole,miss,pts:board+3*hole,bags:board+hole+miss};};
+const winner=()=>g.exact?(g.scores[0]===21?0:g.scores[1]===21?1:-1):(g.scores[0]>=21?0:g.scores[1]>=21?1:-1);
+function applyPts(score,d){const n=score+d;if(!g.exact||n<=21)return {n,bust:false};return {n:g.bustTo==='prev'?score:+g.bustTo,bust:true};}
+function render(){
+  const w=winner(),T=[tally(0),tally(1)];
+  [0,1].forEach(i=>{
+    if(document.activeElement!==$('n'+i))$('n'+i).value=g.names[i];
+    $('s'+i).textContent=g.scores[i];
+    $('b'+i).innerHTML=Array.from({length:4},(_,k)=>`<i class="${k<T[i].bags?'used':''}"></i>`).join('');
+    $('r'+i).innerHTML=T[i].bags?`${T[i].board} board · ${T[i].hole} hole · ${T[i].miss} miss = <b>${T[i].pts}</b>`:`${4-T[i].bags} bags left`;
+    const diff=T[i].pts-T[1-i].pts,p=$('p'+i);p.className='proj';
+    if(diff>0){const r=applyPts(g.scores[i],diff);p.textContent=`${g.scores[i]} → ${r.n}`+(r.bust?' bust':` (+${diff})`);p.classList.add(r.bust?'bust':'up');}
+    else{p.textContent=g.taps.length?`Stays ${g.scores[i]}`:`At ${g.scores[i]}`;p.classList.add('same');}
+    document.querySelectorAll(`.tap[data-t="${i}"]`).forEach(b=>b.disabled=T[i].bags>=4||w>=0);
+  });
+  const d=T[0].pts-T[1].pts;
+  const v=$('verdict');v.classList.remove('bust');
+  if(!g.taps.length)v.textContent='Tap to log each bag';
+  else if(d===0)v.textContent='Cancels out · 0';
+  else{const t=d>0?0:1,r=applyPts(g.scores[t],Math.abs(d));
+    if(r.bust){v.textContent=`${g.names[t]} busts (${g.scores[t]+Math.abs(d)}) → back to ${r.n}`;v.classList.add('bust');}
+    else v.textContent=`${g.names[t]} +${Math.abs(d)} → ${r.n}`+(g.exact&&r.n<21?` · needs ${21-r.n}`:'');}
+  $('exact').checked=g.exact;$('bustTo').value=g.bustTo;$('bustTo').disabled=!g.exact;
+  $('meta').textContent=`Round ${g.history.length+1} · first to 21`;
+  $('win').hidden=w<0;if(w>=0)$('win').textContent=`${g.names[w]} wins!`;
+  $('end').disabled=w>=0;
+  $('undo').disabled=!g.taps.length&&!g.history.length;
+  $('undo').textContent=g.taps.length?'Undo':'Undo round';
+  const L=$('log');L.innerHTML='';
+  g.history.map((h,k)=>({h,k})).reverse().forEach(({h,k})=>{
+    const after=(g.history[k+1]&&g.history[k+1].prev)||(k===g.history.length-1?g.scores:null);
+    const li=document.createElement('li'),n=document.createElement('span'),t=document.createElement('span'),s=document.createElement('span');
+    n.className='n';n.textContent='R'+(k+1);
+    t.textContent=h.w<0?'Cancelled out':`${g.names[h.w]} +${h.d}`+(h.bust?' — bust':'');
+    s.className='sc';s.textContent=after?`${after[0]} – ${after[1]}`:'';
+    li.append(n,t,s);L.append(li);});
+  if(!g.history.length){const li=document.createElement('li');li.innerHTML='<span class="n"></span><span class="n">No rounds yet. Scores show here after each round.</span><span></span>';L.append(li);}
+}
+document.querySelectorAll('.tap').forEach(b=>b.addEventListener('click',()=>{
+  g.taps.push({t:+b.dataset.t,p:+b.dataset.p});
+  if(navigator.vibrate)try{navigator.vibrate(15);}catch(e){}
+  save();render();}));
+$('end').onclick=()=>{const a=tally(0).pts,b=tally(1).pts,d=Math.abs(a-b),w=a>b?0:b>a?1:-1;
+  const prev=g.scores.slice();let bust=false;
+  if(w>=0){const r=applyPts(g.scores[w],d);g.scores[w]=r.n;bust=r.bust;}
+  g.history.push({w,d,bust,prev,taps:g.taps});g.taps=[];save();render();};
+$('exact').onchange=e=>{g.exact=e.target.checked;save();render();};
+$('bustTo').onchange=e=>{g.bustTo=e.target.value;save();render();};
+$('undo').onclick=()=>{
+  if(g.taps.length)g.taps.pop();
+  else if(g.history.length){const h=g.history.pop();if(h.prev)g.scores=h.prev;else if(h.w>=0)g.scores[h.w]-=h.d;g.taps=h.taps||[];}
+  save();render();};
+let armed=null;
+$('reset').onclick=()=>{const b=$('reset');
+  if(!armed){b.textContent='Tap again';armed=setTimeout(()=>{armed=null;b.textContent='New game';},3000);return;}
+  clearTimeout(armed);armed=null;b.textContent='New game';const n=g.names;g=fresh();g.names=n;save();render();};
+[0,1].forEach(i=>$('n'+i).addEventListener('input',e=>{g.names[i]=e.target.value||(i?'Blue':'Red');save();render();}));
+render();
+})();
+</script>
+
+</body>
+</html>
